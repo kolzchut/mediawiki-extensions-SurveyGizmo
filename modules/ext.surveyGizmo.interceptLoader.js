@@ -26,8 +26,8 @@
 			sg_beacon( 'data', 'isLandingPage', mw.wr.sg.isLandingPage() ? "true" : "false" );
 			sg_beacon( 'data', 'wgCategories', mw.config.get('wgCategories').join( ',' ) );
 			sg_beacon( 'data', 'rejectedSurveys', mw.wr.sg.status.rejected.join( ',' ) );
-			sg_beacon( 'data', 'startedSurveys', mw.wr.sg.status.rejected.join( ',' ) );
-			sg_beacon( 'data', 'finishedSurveys', mw.wr.sg.status.rejected.join( ',' ) );
+			sg_beacon( 'data', 'startedSurveys', mw.wr.sg.status.started.join( ',' ) );
+			sg_beacon( 'data', 'finishedSurveys', mw.wr.sg.status.finished.join( ',' ) );
 			sg_beacon( 'data', 'userType', mw.wr.sg.status.userType );
 
 		},
