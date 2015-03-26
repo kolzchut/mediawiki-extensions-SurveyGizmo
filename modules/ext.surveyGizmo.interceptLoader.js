@@ -22,10 +22,13 @@
 				(window.sg_beacon.q = window.sg_beacon.q || []).push(arguments);
 			};
 			mw.loader.load( mw.wr.sg.settings.beaconUrl );
-			sg_beacon('init', mw.wr.sg.settings.beaconID);
-			sg_beacon('data', 'isLandingPage', mw.wr.sg.isLandingPage() ? "true" : "false" );
-			sg_beacon('data', 'wgCategories', mw.config.get('wgCategories').join(',') );
-			sg_beacon('data', 'previousSurveys', mw.wr.sg.getAllPreviousSurveys() );
+			sg_beacon( 'init', mw.wr.sg.settings.beaconID);
+			sg_beacon( 'data', 'isLandingPage', mw.wr.sg.isLandingPage() ? "true" : "false" );
+			sg_beacon( 'data', 'wgCategories', mw.config.get('wgCategories').join( ',' ) );
+			sg_beacon( 'data', 'rejectedSurveys', mw.wr.sg.status.rejected.join( ',' ) );
+			sg_beacon( 'data', 'startedSurveys', mw.wr.sg.status.rejected.join( ',' ) );
+			sg_beacon( 'data', 'finishedSurveys', mw.wr.sg.status.rejected.join( ',' ) );
+			sg_beacon( 'data', 'userType', mw.wr.sg.status.userType );
 
 		},
 
