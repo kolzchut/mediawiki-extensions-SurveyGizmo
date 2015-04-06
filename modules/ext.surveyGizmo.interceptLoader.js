@@ -75,7 +75,7 @@
 					}
 				}
 
-				if ( data.action === 'userType' ) {
+				else if ( data.action === 'userType' ) {
 					window._gaq = window._gaq || [];
 					window._gaq.push(['_setCustomVar',
 						2,					// 2nd slot
@@ -86,6 +86,10 @@
 					mw.log( 'User type: ' + data.status );
 					mw.wr.sg.status.userType = data.status;
 					mw.wr.sg.updateCookie();
+				}
+
+				else if ( data.action === 'closeDialog' ) {
+					mw.wr.sg.closeDialog();
 				}
 
 			});
@@ -139,6 +143,12 @@
 				}
 			});
 		},
+
+		closeDialog: function() {
+			// Mime clicking on the close button...
+			$( '.sg-b-p-c').click();
+		},
+
 		/**
 		 * SurveyGizmo's survey window is closed on clicking the overlay,
 		 * which is no good. This is a hack to prevent that.
