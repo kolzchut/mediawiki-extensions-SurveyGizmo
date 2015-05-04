@@ -90,6 +90,7 @@
 
 				else if ( data.action === 'closeDialog' ) {
 					mw.wr.sg.closeDialog();
+					window.closeActiveModal(); // In case the survey was loaded in Extension:ShareBar's modal
 				}
 
 			});
