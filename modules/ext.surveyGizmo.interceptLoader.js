@@ -138,7 +138,7 @@
 				var result = regex.exec( mw.wrShareBar.settings.feedback.url );
 				if ( result[1] ) {
 					$( '.kz-nav-feedback, .kz-footer-feedback').click( function () {
-						mw.wr.sg.surveyID = result[1];
+						mw.wr.sg.surveyID = parseInt( result[1] );
 						mw.wr.sg.status.started.push( mw.wr.sg.surveyID );
 						mw.wr.sg.trackAnalyticsEvent( 'survey-started-manually' );
 						mw.wr.sg.updateCookie();
