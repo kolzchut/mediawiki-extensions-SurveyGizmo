@@ -1,5 +1,6 @@
 // @TODO should we handle .sg-b-p-c (survey close) as well?
 
+/* global mediaWiki, sg_beacon */
 ( function( $, mw ) {
 	'use strict';
 
@@ -124,12 +125,26 @@
 		setLaunchHandler: function() {
 			$('body').on('click', '.sg-b-l-t', function () {
 				if (mw.wr.sg.getSurveyID()) {
-					mw.wr.sg.status.started.push(mw.wr.sg.surveyID);
+					mw.wr.sg.status.started.push( mw.wr.sg.surveyID );
 					mw.wr.sg.trackAnalyticsEvent( 'survey-started' );
 					mw.wr.sg.updateCookie();
 					mw.wr.sg.turnIntoRealModal();
 				}
 			});
+
+			// Manual start
+			if ( mw.wrShareBar && mw.wrShareBar.settings.feedback.url ) {
+				var regex = /\/s3\/(\d+)\//;
+				var result = regex.exec( mw.wrShareBar.settings.feedback.url );
+				if ( result[1] ) {
+					$( '.kz-nav-feedback, .kz-footer-feedback').click( function () {
+						mw.wr.sg.surveyID = result[1];
+						mw.wr.sg.status.started.push( mw.wr.sg.surveyID );
+						mw.wr.sg.trackAnalyticsEvent( 'survey-started-manually' );
+						mw.wr.sg.updateCookie();
+					});
+				}
+			}
 		},
 
 		setInterceptCloseHandler: function() {
