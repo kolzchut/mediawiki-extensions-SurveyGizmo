@@ -117,7 +117,8 @@
 		updateCookie: function() {
 			mw.loader.using( 'mediawiki.cookie', function() {
 				mw.log( mw.wr.sg.status );
-				mw.cookie.set( mw.wr.sg.cookieName, JSON.stringify( mw.wr.sg.status ), { expires: 365 } );
+				// @NOTICE jQuery cookies treats expires as days, mediaWiki.cookie treats it as seconds!
+				mw.cookie.set( mw.wr.sg.cookieName, JSON.stringify( mw.wr.sg.status ), { expires: 31536000 } );
 			});
 
 		},
