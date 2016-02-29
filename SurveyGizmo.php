@@ -9,12 +9,12 @@
  * @license GNU General Public Licence 2.0 or later
  */
 
-$GLOBALS['wgExtensionCredits']['other'][] = array(
+$wgExtensionCredits['other'][] = array(
 	'name' => 'SurveyGizmo Intercept Loader',
 	'author' => array(
 		'Dror S. [FFS] ([http://www.kolzchut.org.il Kol-Zchut])',
 	),
-	'version'  => '0.1.0',
+	'version'  => '0.2.0',
 	'license-name' => 'GPL-2.0+',
 	'descriptionmsg' => 'surveygizmo-desc',
 	'path' => __FILE__
@@ -23,28 +23,35 @@ $GLOBALS['wgExtensionCredits']['other'][] = array(
 /* Setup */
 
 // Register files
-$GLOBALS['wgAutoloadClasses']['SurveyGizmoHooks'] = __DIR__ . '/SurveyGizmo.hooks.php';
-$GLOBALS['wgMessagesDirs']['SurveyGizmo'] = __DIR__ . '/i18n';
+$wgAutoloadClasses['SurveyGizmoHooks'] = __DIR__ . '/SurveyGizmo.hooks.php';
+$wgMessagesDirs['SurveyGizmo'] = __DIR__ . '/i18n';
 
 
 // Hooks
-$GLOBALS['wgHooks']['BeforePageDisplay'][] = 'SurveyGizmoHooks::onBeforePageDisplay';
-$GLOBALS['wgHooks']['ResourceLoaderGetConfigVars'][] =
+$wgHooks['BeforePageDisplay'][] = 'SurveyGizmoHooks::onBeforePageDisplay';
+$wgHooks['ResourceLoaderGetConfigVars'][] =
 	'SurveyGizmoHooks::onResourceLoaderGetConfigVars';
 
 
 /* Configuration */
-$GLOBALS['wgSurveyGizmoBeaconID'] = null;
+$wgSurveyGizmoBeaconID = null;
 
 /* ResourceLoader modules */
 
 $resourceTemplate = array(
 	'localBasePath' => __DIR__ . '/modules',
 	'remoteExtPath' => 'WikiRights/SurveyGizmo/modules',
-	//'dependencies' => array( '' ),
 );
-$GLOBALS['wgResourceModules']['ext.surveyGizmo'] = $resourceTemplate + array(
-		'scripts' => 'ext.surveyGizmo.interceptLoader.js',
-		'styles' => 'ext.surveyGizmo.interceptLoader.less',
-		'dependencies' => 'mediawiki.cookie'
-	);
+
+$wgResourceModules['ext.surveyGizmo'] = $resourceTemplate + array(
+	'scripts' => 'ext.surveyGizmo.interceptLoader.js',
+	'styles' => 'ext.surveyGizmo.interceptLoader.less',
+	'dependencies' => array(
+		'mediawiki.cookie',
+		'ext.googleUniversalAnalytics.utils'
+	),
+	'position' => 'bottom'
+);
+
+unset( $resourceTemplate );
+

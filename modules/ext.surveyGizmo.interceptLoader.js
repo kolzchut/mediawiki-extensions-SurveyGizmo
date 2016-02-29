@@ -5,6 +5,8 @@
 	'use strict';
 
 	mw.wr = mw.wr || {};	// Might not be defined yet
+	var gaUtils = mw.googleAnalytics.utils;
+
 	mw.wr.sg = {
 		settings: mw.config.get( 'wgSurveyGizmo' ),
 		_this: this,
@@ -14,17 +16,18 @@
 		surveyID: null,
 
 		isLandingPage: function() {
-			return document.referrer.indexOf( location.protocol + "//" + location.host ) !== 0;
+			return document.referrer.indexOf( location.protocol + '//' + location.host ) !== 0;
 		},
 
 		addSurveyGizmoCode: function() {
+			/*jshint camelcase: false */
 			window.SurveyGizmoBeacon = 'sg_beacon';
 			window.sg_beacon = window.sg_beacon || function () {
 				(window.sg_beacon.q = window.sg_beacon.q || []).push(arguments);
 			};
 			mw.loader.load( mw.wr.sg.settings.beaconUrl );
 			sg_beacon( 'init', mw.wr.sg.settings.beaconID);
-			sg_beacon( 'data', 'isLandingPage', mw.wr.sg.isLandingPage() ? "true" : "false" );
+			sg_beacon( 'data', 'isLandingPage', mw.wr.sg.isLandingPage() ? 'true' : 'false' );
 			sg_beacon( 'data', 'wgCategories', mw.config.get('wgCategories').join( ',' ) );
 			sg_beacon( 'data', 'rejectedSurveys', mw.wr.sg.status.rejected.join( ',' ) );
 			sg_beacon( 'data', 'startedSurveys', mw.wr.sg.status.started.join( ',' ) );
@@ -61,7 +64,7 @@
 		},
 
 		addMessageListener: function() {
-			window.addEventListener( "message", function( event ) {
+			window.addEventListener( 'message', function( event ) {
 				if ( !mw.wr.sg.isValidOrigin( event.origin ) ) {
 					return; // La la la, I'm not listening to you!
 				}
@@ -77,6 +80,8 @@
 				}
 
 				else if ( data.action === 'userType' ) {
+					/*
+					// Can't do this in Universal Analytics
 					window._gaq = window._gaq || [];
 					window._gaq.push(['_setCustomVar',
 						2,					// 2nd slot
@@ -84,6 +89,7 @@
 						data.status,		// custom variable filtered in GA
 						1					// custom variable scope - visitor-level
 					]);
+					*/
 					mw.log( 'User type: ' + data.status );
 					mw.wr.sg.status.userType = data.status;
 					mw.wr.sg.updateCookie();
@@ -98,20 +104,18 @@
 
 		},
 
+		// @todo for universal analytics, check if user type is defined and send it as a custom dimension
 		trackAnalyticsEvent: function( surveyAction ) {
-			window._gaq = window._gaq || [];
-			window._gaq.push([
-				'_trackEvent',
-				'SurveyGizmo-Survey',
-				surveyAction,
-				mw.wr.sg.getSurveyID().toString(),
-				undefined,
-				true
-			]);
+			gaUtils.recordEvent( {
+				eventCategory: 'SurveyGizmo-Survey',
+				eventAction: surveyAction,
+				eventLabel: mw.wr.sg.getSurveyID().toString(),
+				nonInteraction: true
+			} );
 		},
 
 		isValidOrigin: function( origin ) {
-			return null !== origin.match(/https?:\/\/(www\.)?surveygizmo\.(com|co\.uk)/);
+			return null !== origin.match(/https?:\/\/(www\.)?surveygizmo\.(com|eu|co\.uk)/);
 		},
 
 		updateCookie: function() {
@@ -137,7 +141,7 @@
 			if ( mw.wrShareBar && mw.wrShareBar.settings.feedback.url ) {
 				var regex = /\/s3\/(\d+)\//;
 				var result = regex.exec( mw.wrShareBar.settings.feedback.url );
-				if ( result[1] ) {
+				if ( result && result[1] ) {
 					$( '.kz-nav-feedback, .kz-footer-feedback').click( function () {
 						mw.wr.sg.surveyID = parseInt( result[1] );
 						mw.wr.sg.status.started.push( mw.wr.sg.surveyID );
