@@ -16,6 +16,7 @@ $wgExtensionCredits['other'][] = array(
 	),
 	'version'  => '0.2.0',
 	'license-name' => 'GPL-2.0+',
+	'url' => 'https://github.com/kolzchut/mediawiki-extensions-SurveyGizmo',
 	'descriptionmsg' => 'surveygizmo-desc',
 	'path' => __FILE__
 );
