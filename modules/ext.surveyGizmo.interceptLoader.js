@@ -33,7 +33,14 @@
 			sg_beacon( 'data', 'startedSurveys', mw.wr.sg.status.started.join( ',' ) );
 			sg_beacon( 'data', 'finishedSurveys', mw.wr.sg.status.finished.join( ',' ) );
 			sg_beacon( 'data', 'userType', mw.wr.sg.status.userType );
+			sg_beacon( 'onlit', mw.wr.sg.onInterceptLit );
 
+		},
+
+		onInterceptLit: function() {
+			if ( mw.centralNotice ) {
+				mw.centralNotice.setBannerLoadedButHidden('surveyloaded');
+			}
 		},
 
 		getAllPreviousSurveys: function() {
@@ -182,6 +189,11 @@
 		},
 
 		init: function() {
+			// Cancel if a banner is already showing
+			if ( mw.centralNotice && mw.centralNotice.isBannerShown() ) {
+				return false;
+			}
+
 			mw.loader.using( 'mediawiki.cookie', function() {
 				var cookieVal = mw.cookie.get( mw.wr.sg.cookieName );
 				if (cookieVal) {
