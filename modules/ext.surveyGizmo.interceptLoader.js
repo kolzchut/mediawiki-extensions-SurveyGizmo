@@ -190,7 +190,11 @@
 
 		init: function() {
 			// Cancel if a banner is already showing
-			if ( mw.centralNotice && mw.centralNotice.isBannerShown() ) {
+			if (
+				mw.centralNotice
+				&& typeof(mw.centralNotice.isBannerShown) === 'function'
+				&& mw.centralNotice.isBannerShown()
+			) {
 				return false;
 			}
 
