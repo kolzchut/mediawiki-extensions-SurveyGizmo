@@ -71,12 +71,20 @@
 		},
 
 		addMessageListener: function() {
-			window.addEventListener( 'message', function( event ) {
-				if ( !mw.wr.sg.isValidOrigin( event.origin ) ) {
+			$(window).on( 'message', function ( event, data, origin ) {
+				if (!data) {
+					data = event.originalEvent ? event.originalEvent.data : event.data;
+				}
+				if (!origin) {
+					origin = event.originalEvent ? event.originalEvent.origin : event.origin;
+				}
+
+
+				if ( !mw.wr.sg.isValidOrigin( origin ) ) {
 					return; // La la la, I'm not listening to you!
 				}
 
-				var data = JSON.parse( event.data );
+				data = JSON.parse( data );
 
 				if ( data.action === 'status' ) {
 					if( data.status === 'submitted' && data.id ) {
