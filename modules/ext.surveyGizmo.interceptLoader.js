@@ -153,7 +153,7 @@
 			});
 
 			// Manual start
-			if ( mw.wrShareBar && mw.wrShareBar.settings.feedback.url ) {
+			if ( typeof( mw.wrShareBar ) !== 'undefined' && mw.wrShareBar.settings.feedback.url ) {
 				var regex = /\/s3\/(\d+)\//;
 				var result = regex.exec( mw.wrShareBar.settings.feedback.url );
 				if ( result && result[1] ) {
