@@ -5,7 +5,6 @@
 	'use strict';
 
 	mw.wr = mw.wr || {};	// Might not be defined yet
-	var gaUtils = mw.googleAnalytics.utils;
 
 	mw.wr.sg = {
 		settings: mw.config.get( 'wgSurveyGizmo' ),
@@ -121,12 +120,17 @@
 
 		// @todo for universal analytics, check if user type is defined and send it as a custom dimension
 		trackAnalyticsEvent: function( surveyAction ) {
-			gaUtils.recordEvent( {
-				eventCategory: 'SurveyGizmo-Survey',
-				eventAction: surveyAction,
-				eventLabel: mw.wr.sg.getSurveyID().toString(),
-				nonInteraction: true
-			} );
+			if( mw.loader.getState( 'ext.googleUniversalAnalytics.utils' ) === null ) {
+				return;
+			}
+			mw.loader.using( 'ext.googleUniversalAnalytics.utils' ).then( function() {
+				mw.googleAnalytics.utils.recordEvent({
+					eventCategory: 'SurveyGizmo-Survey',
+					eventAction: surveyAction,
+					eventLabel: mw.wr.sg.getSurveyID().toString(),
+					nonInteraction: true
+				});
+			});
 		},
 
 		isValidOrigin: function( origin ) {
