@@ -1,7 +1,7 @@
 // @TODO should we handle .sg-b-p-c (survey close) as well?
 
 /* global mediaWiki, sg_beacon */
-( function( $, mw ) {
+( function ( $, mw ) {
 	'use strict';
 
 	mw.wr = mw.wr || {};	// Might not be defined yet
@@ -14,20 +14,21 @@
 		status: {},
 		surveyID: null,
 
-		isLandingPage: function() {
+		isLandingPage: function () {
 			return document.referrer.indexOf( location.protocol + '//' + location.host ) !== 0;
 		},
 
-		addSurveyGizmoCode: function() {
-			/*jshint camelcase: false */
+		addSurveyGizmoCode: function () {
+			/* eslint-disable camelcase */
 			window.SurveyGizmoBeacon = 'sg_beacon';
 			window.sg_beacon = window.sg_beacon || function () {
-				(window.sg_beacon.q = window.sg_beacon.q || []).push(arguments);
+				( window.sg_beacon.q = window.sg_beacon.q || [] ).push( arguments );
 			};
+			/* eslint-enable camelcase */
 			mw.loader.load( mw.wr.sg.settings.beaconUrl );
-			sg_beacon( 'init', mw.wr.sg.settings.beaconID);
+			sg_beacon( 'init', mw.wr.sg.settings.beaconID );
 			sg_beacon( 'data', 'isLandingPage', mw.wr.sg.isLandingPage() ? 'true' : 'false' );
-			sg_beacon( 'data', 'wgCategories', mw.config.get('wgCategories').join( ',' ) );
+			sg_beacon( 'data', 'wgCategories', mw.config.get( 'wgCategories' ).join( ',' ) );
 			sg_beacon( 'data', 'rejectedSurveys', mw.wr.sg.status.rejected.join( ',' ) );
 			sg_beacon( 'data', 'startedSurveys', mw.wr.sg.status.started.join( ',' ) );
 			sg_beacon( 'data', 'finishedSurveys', mw.wr.sg.status.finished.join( ',' ) );
@@ -36,13 +37,13 @@
 
 		},
 
-		onInterceptLit: function() {
+		onInterceptLit: function () {
 			if ( mw.centralNotice ) {
-				mw.centralNotice.setBannerLoadedButHidden('surveyloaded');
+				mw.centralNotice.setBannerLoadedButHidden( 'surveyloaded' );
 			}
 		},
 
-		getAllPreviousSurveys: function() {
+		getAllPreviousSurveys: function () {
 			return (
 				mw.wr.sg.status.rejected +
 				mw.wr.sg.status.started +
@@ -50,34 +51,34 @@
 			);
 		},
 
+		getSurveyID: function () {
+			var $realLink,
+				matches;
 
-		getSurveyID: function() {
-			if( mw.wr.sg.surveyID ) {
+			if ( mw.wr.sg.surveyID ) {
 				return mw.wr.sg.surveyID;
 			}
-			var $realLink = $('.sg-b-l-m');
-			var matches = $realLink.length > 0 ?
-				$realLink.attr('href').match(/\/s3\/(\d+)\//) :
-				null
-			;
+			$realLink = $( '.sg-b-l-m' );
+			matches = $realLink.length > 0 ?
+				$realLink.attr( 'href' ).match( /\/s3\/(\d+)\// ) :
+				null;
 
-			if ( matches && $.isArray( matches ) && matches[1] ) {
-				mw.wr.sg.surveyID = parseInt( matches[1] );
+			if ( matches && $.isArray( matches ) && matches[ 1 ] ) {
+				mw.wr.sg.surveyID = parseInt( matches[ 1 ] );
 				return mw.wr.sg.surveyID;
 			}
 
 			return null;
 		},
 
-		addMessageListener: function() {
-			$(window).on( 'message', function ( event, data, origin ) {
-				if (!data) {
+		addMessageListener: function () {
+			$( window ).on( 'message', function ( event, data, origin ) {
+				if ( !data ) {
 					data = event.originalEvent ? event.originalEvent.data : event.data;
 				}
-				if (!origin) {
+				if ( !origin ) {
 					origin = event.originalEvent ? event.originalEvent.origin : event.origin;
 				}
-
 
 				if ( !mw.wr.sg.isValidOrigin( origin ) ) {
 					return; // La la la, I'm not listening to you!
@@ -86,14 +87,12 @@
 				data = JSON.parse( data );
 
 				if ( data.action === 'status' ) {
-					if( data.status === 'submitted' && data.id ) {
+					if ( data.status === 'submitted' && data.id ) {
 						mw.wr.sg.status.finished.push( data.id );
 						mw.wr.sg.trackAnalyticsEvent( 'survey-completed' );
 						mw.wr.sg.updateCookie();
 					}
-				}
-
-				else if ( data.action === 'userType' ) {
+				}				else if ( data.action === 'userType' ) {
 					/*
 					// Can't do this in Universal Analytics
 					window._gaq = window._gaq || [];
@@ -107,86 +106,91 @@
 					mw.log( 'User type: ' + data.status );
 					mw.wr.sg.status.userType = data.status;
 					mw.wr.sg.updateCookie();
-				}
-
-				else if ( data.action === 'closeDialog' ) {
+				}				else if ( data.action === 'closeDialog' ) {
 					mw.wr.sg.closeDialog();
-					window.closeActiveModal(); // In case the survey was loaded in Extension:ShareBar's modal
+					// In case the survey was loaded in Extension:ShareBar's modal:
+					window.closeActiveModal();
 				}
 
-			});
+			} );
 
 		},
 
-		// @todo for universal analytics, check if user type is defined and send it as a custom dimension
-		trackAnalyticsEvent: function( surveyAction ) {
-			if( mw.loader.getState( 'ext.googleUniversalAnalytics.utils' ) === null ) {
+		// @todo Find a way to send user type as a custom dimension in Universal Analytics
+		trackAnalyticsEvent: function ( surveyAction ) {
+			if ( mw.loader.getState( 'ext.googleUniversalAnalytics.utils' ) === null ) {
 				return;
 			}
-			mw.loader.using( 'ext.googleUniversalAnalytics.utils' ).then( function() {
-				mw.googleAnalytics.utils.recordEvent({
+			mw.loader.using( 'ext.googleUniversalAnalytics.utils' ).then( function () {
+				mw.googleAnalytics.utils.recordEvent( {
 					eventCategory: 'SurveyGizmo-Survey',
 					eventAction: surveyAction,
 					eventLabel: mw.wr.sg.getSurveyID().toString(),
 					nonInteraction: true
-				});
-			});
+				} );
+			} );
 		},
 
-		isValidOrigin: function( origin ) {
-			return null !== origin.match(/https?:\/\/(www\.)?surveygizmo\.(com|eu|co\.uk)/);
+		isValidOrigin: function ( origin ) {
+			return origin.match( /https?:\/\/(www\.)?surveygizmo\.(com|eu|co\.uk)/ ) !== null;
 		},
 
-		updateCookie: function() {
-			mw.loader.using( 'mediawiki.cookie', function() {
+		updateCookie: function () {
+			mw.loader.using( 'mediawiki.cookie', function () {
 				mw.log( mw.wr.sg.status );
-				// @NOTICE jQuery cookies treats expires as days, mediaWiki.cookie treats it as seconds!
-				mw.cookie.set( mw.wr.sg.cookieName, JSON.stringify( mw.wr.sg.status ), { expires: 31536000 } );
-			});
+				// @NOTICE jQuery.cookie treats expires as days, mw.cookie treats it as seconds!
+				mw.cookie.set(
+					mw.wr.sg.cookieName,
+					JSON.stringify( mw.wr.sg.status ),
+					{ expires: 31536000 }
+				);
+			} );
 
 		},
 
-		setLaunchHandler: function() {
-			$('body').on('click', '.sg-b-l-t', function () {
-				if (mw.wr.sg.getSurveyID()) {
+		setLaunchHandler: function () {
+			var regex, result;
+
+			$( 'body' ).on( 'click', '.sg-b-l-t', function () {
+				if ( mw.wr.sg.getSurveyID() ) {
 					mw.wr.sg.status.started.push( mw.wr.sg.surveyID );
 					mw.wr.sg.trackAnalyticsEvent( 'survey-started' );
 					mw.wr.sg.updateCookie();
 					mw.wr.sg.turnIntoRealModal();
 				}
-			});
+			} );
 
 			// Manual start
-			if ( typeof( mw.wrShareBar ) !== 'undefined' && mw.wrShareBar.settings.feedback.url ) {
-				var regex = /\/s3\/(\d+)\//;
-				var result = regex.exec( mw.wrShareBar.settings.feedback.url );
-				if ( result && result[1] ) {
-					$( '.kz-nav-feedback, .kz-footer-feedback').click( function () {
-						mw.wr.sg.surveyID = parseInt( result[1] );
+			if ( typeof ( mw.wrShareBar ) !== 'undefined' && mw.wrShareBar.settings.feedback.url ) {
+				regex = /\/s3\/(\d+)\//;
+				result = regex.exec( mw.wrShareBar.settings.feedback.url );
+				if ( result && result[ 1 ] ) {
+					$( '.kz-nav-feedback, .kz-footer-feedback' ).click( function () {
+						mw.wr.sg.surveyID = parseInt( result[ 1 ] );
 						mw.wr.sg.status.started.push( mw.wr.sg.surveyID );
 						mw.wr.sg.trackAnalyticsEvent( 'survey-started-manually' );
 						mw.wr.sg.updateCookie();
-					});
+					} );
 				}
 			}
 		},
 
-		setInterceptCloseHandler: function() {
-			$( 'body' ).on( 'click', '.sg-js-d', function() {
+		setInterceptCloseHandler: function () {
+			$( 'body' ).on( 'click', '.sg-js-d', function () {
 				// On clicking the intercept "close" button
-				if( mw.wr.sg.getSurveyID() ) {
+				if ( mw.wr.sg.getSurveyID() ) {
 					mw.wr.sg.status.rejected.push( mw.wr.sg.surveyID );
 					mw.wr.sg.trackAnalyticsEvent( 'survey-rejected' );
 					mw.wr.sg.updateCookie();
 				} else {
 					mw.log.warn( 'No survey ID to log' );
 				}
-			});
+			} );
 		},
 
-		closeDialog: function() {
+		closeDialog: function () {
 			// Mime clicking on the close button...
-			$( '.sg-b-p-c').click();
+			$( '.sg-b-p-c' ).click();
 		},
 
 		/**
@@ -194,25 +198,25 @@
 		 * which is no good. This is a hack to prevent that.
 		 * @TODO get this to actually work...
 		 */
-		turnIntoRealModal: function() {
-			$( '.sg-b-p-m').on( 'click', function( e ) {
+		turnIntoRealModal: function () {
+			$( '.sg-b-p-m' ).on( 'click', function ( e ) {
 				e.stopImmediatePropagation();
-			});
+			} );
 		},
 
-		init: function() {
+		init: function () {
 			// Cancel if a banner is already showing
 			if (
-				mw.centralNotice
-				&& typeof(mw.centralNotice.isBannerShown) === 'function'
-				&& mw.centralNotice.isBannerShown()
+				mw.centralNotice &&
+				typeof ( mw.centralNotice.isBannerShown ) === 'function' &&
+				mw.centralNotice.isBannerShown()
 			) {
 				return false;
 			}
 
-			mw.loader.using( 'mediawiki.cookie', function() {
+			mw.loader.using( 'mediawiki.cookie', function () {
 				var cookieVal = mw.cookie.get( mw.wr.sg.cookieName );
-				if (cookieVal) {
+				if ( cookieVal ) {
 					mw.wr.sg.status = JSON.parse( cookieVal );
 				} else {
 					mw.wr.sg.status = {
@@ -222,7 +226,7 @@
 						userType: null
 					};
 				}
-			});
+			} );
 
 			mw.wr.sg.addSurveyGizmoCode();
 
@@ -236,4 +240,4 @@
 
 	mw.wr.sg.init();
 
-})( jQuery, mediaWiki );
+}( jQuery, mediaWiki ) );

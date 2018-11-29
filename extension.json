@@ -1,0 +1,42 @@
+{
+	"name": "SurveyGizmo Intercept Loader",
+	"version": "0.3.0",
+	"author": [
+		"Dror S. [FFS] ([http://www.kolzchut.org.il Kol-Zchut])"
+	],
+	"url": "https://github.com/kolzchut/mediawiki-extensions-SurveyGizmo",
+	"descriptionmsg": "surveygizmo-desc",
+	"license-name": "GPL-2.0-or-later",
+	"type": "other",
+	"MessagesDirs": {
+		"SurveyGizmo": [
+			"i18n"
+		]
+	},
+	"AutoloadClasses": {
+		"SurveyGizmoHooks": "SurveyGizmoHooks.php"
+	},
+	"ResourceModules": {
+		"ext.surveyGizmo": {
+			"scripts": "ext.surveyGizmo.interceptLoader.js",
+			"styles": "ext.surveyGizmo.interceptLoader.less",
+			"dependencies": [
+				"mediawiki.cookie"
+			]
+		}
+	},
+	"ResourceFileModulePaths": {
+		"localBasePath": "modules",
+		"remoteExtPath": "WikiRights/SurveyGizmo/modules"
+	},
+	"Hooks": {
+		"BeforePageDisplay": "SurveyGizmoHooks::onBeforePageDisplay",
+		"ResourceLoaderGetConfigVars": "SurveyGizmoHooks::onResourceLoaderGetConfigVars"
+	},
+	"config": {
+		"SurveyGizmoBeaconID": {
+			"value": null
+		}
+	},
+	"manifest_version": 2
+}

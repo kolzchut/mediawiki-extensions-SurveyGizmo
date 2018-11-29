@@ -11,15 +11,15 @@ class SurveyGizmoHooks {
 	 * BeforePageDisplay hook
 	 * Adds the modules to the page
 	 *
-	 * @param $out OutputPage output page
-	 * @param $skin Skin current skin
+	 * @param OutputPage &$out
+	 * @param Skin &$skin current skin
 	 *
 	 * @return bool
 	 */
 	public static function onBeforePageDisplay( OutputPage &$out, Skin &$skin ) {
 		global $wgSurveyGizmoBeaconID, $wgSurveyGizmoBeaconUrl;
 
-		if ( !empty( $wgSurveyGizmoBeaconID ) && !empty( $wgSurveyGizmoBeaconUrl) ) {
+		if ( !empty( $wgSurveyGizmoBeaconID ) && !empty( $wgSurveyGizmoBeaconUrl ) ) {
 			$out->addModules( 'ext.surveyGizmo' );
 		};
 
@@ -27,7 +27,7 @@ class SurveyGizmoHooks {
 	}
 
 	/**
-	 * @param $vars
+	 * @param array &$vars
 	 *
 	 * @return bool
 	 */
