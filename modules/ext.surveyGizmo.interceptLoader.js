@@ -34,6 +34,7 @@
 			sg_beacon( 'data', 'startedSurveys', mw.wr.sg.status.started.join( ',' ) );
 			sg_beacon( 'data', 'finishedSurveys', mw.wr.sg.status.finished.join( ',' ) );
 			sg_beacon( 'data', 'userType', mw.wr.sg.status.userType );
+			sg_beacon( 'onoffered', mw.wr.sg.onSurveyOffered );
 			sg_beacon( 'onlit', mw.wr.sg.onInterceptLit );
 
 		},
@@ -42,6 +43,10 @@
 			if ( mw.centralNotice ) {
 				mw.centralNotice.setBannerLoadedButHidden( 'surveyloaded' );
 			}
+		},
+
+		onSurveyOffered: function() {
+			mw.wr.sg.trackAnalyticsEvent( 'survey-offered' );
 		},
 
 		getAllPreviousSurveys: function () {
