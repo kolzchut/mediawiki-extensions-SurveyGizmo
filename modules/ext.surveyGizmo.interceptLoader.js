@@ -28,6 +28,7 @@
 			mw.loader.load( mw.wr.sg.settings.beaconUrl );
 			sg_beacon( 'init', mw.wr.sg.settings.beaconID );
 			sg_beacon( 'data', 'wgTitle', mw.config.get( 'wgTitle' ) );
+			sg_beacon( 'data', 'referrerUrl', location.origin + location.pathname );
 			sg_beacon( 'data', 'isLandingPage', mw.wr.sg.isLandingPage() ? 'true' : 'false' );
 			sg_beacon( 'data', 'wgCategories', mw.config.get( 'wgCategories' ).join( ',' ) );
 			sg_beacon( 'data', 'rejectedSurveys', mw.wr.sg.status.rejected.join( ',' ) );
