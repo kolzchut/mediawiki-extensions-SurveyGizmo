@@ -1,250 +1,203 @@
 // @TODO should we handle .sg-b-p-c (survey close) as well?
 
-/* global mediaWiki, sg_beacon */
-( function ( $, mw ) {
-	'use strict';
+/* @global sg_beacon */
+mw.wr = mw.wr || {};	// Might not be defined yet
 
-	mw.wr = mw.wr || {};	// Might not be defined yet
+mw.wr.sg = {
+	settings: mw.config.get( 'wgSurveyGizmo' ),
+	_this: this,
+	cookieName: 'Surveys',
+	visitorCookie: '_sg_b_v',
+	status: {},
+	surveyID: null,
 
-	mw.wr.sg = {
-		settings: mw.config.get( 'wgSurveyGizmo' ),
-		_this: this,
-		cookieName: 'Surveys',
-		visitorCookie: '_sg_b_v',
-		status: {},
-		surveyID: null,
+	isLandingPage: function () {
+		return document.referrer.indexOf( location.protocol + '//' + location.host ) !== 0;
+	},
 
-		isLandingPage: function () {
-			return document.referrer.indexOf( location.protocol + '//' + location.host ) !== 0;
-		},
+	addSurveyGizmoCode: function () {
+		/* eslint-disable camelcase */
+		window.SurveyGizmoBeacon = 'sg_beacon';
+		window.sg_beacon = window.sg_beacon || function () {
+			( window.sg_beacon.q = window.sg_beacon.q || [] ).push( arguments );
+		};
+		/* eslint-enable camelcase */
+		mw.loader.load( mw.wr.sg.settings.beaconUrl );
+		sg_beacon( 'init', mw.wr.sg.settings.beaconID );
+		sg_beacon( 'data', 'wgTitle', mw.config.get( 'wgTitle' ) );
+		sg_beacon( 'data', 'referrerUrl', location.origin + location.pathname );
+		sg_beacon( 'data', 'isLandingPage', mw.wr.sg.isLandingPage() ? 'true' : 'false' );
+		sg_beacon( 'data', 'wgCategories', mw.config.get( 'wgCategories' ).join( ',' ) );
+		sg_beacon( 'data', 'rejectedSurveys', mw.wr.sg.status.rejected.join( ',' ) );
+		sg_beacon( 'data', 'startedSurveys', mw.wr.sg.status.started.join( ',' ) );
+		sg_beacon( 'data', 'finishedSurveys', mw.wr.sg.status.finished.join( ',' ) );
+		sg_beacon( 'data', 'userType', mw.wr.sg.status.userType );
+		sg_beacon( 'onoffered', mw.wr.sg.onSurveyOffered );
+		sg_beacon( 'onlit', mw.wr.sg.onInterceptLit );
 
-		addSurveyGizmoCode: function () {
-			/* eslint-disable camelcase */
-			window.SurveyGizmoBeacon = 'sg_beacon';
-			window.sg_beacon = window.sg_beacon || function () {
-				( window.sg_beacon.q = window.sg_beacon.q || [] ).push( arguments );
-			};
-			/* eslint-enable camelcase */
-			mw.loader.load( mw.wr.sg.settings.beaconUrl );
-			sg_beacon( 'init', mw.wr.sg.settings.beaconID );
-			sg_beacon( 'data', 'wgTitle', mw.config.get( 'wgTitle' ) );
-			sg_beacon( 'data', 'referrerUrl', location.origin + location.pathname );
-			sg_beacon( 'data', 'isLandingPage', mw.wr.sg.isLandingPage() ? 'true' : 'false' );
-			sg_beacon( 'data', 'wgCategories', mw.config.get( 'wgCategories' ).join( ',' ) );
-			sg_beacon( 'data', 'rejectedSurveys', mw.wr.sg.status.rejected.join( ',' ) );
-			sg_beacon( 'data', 'startedSurveys', mw.wr.sg.status.started.join( ',' ) );
-			sg_beacon( 'data', 'finishedSurveys', mw.wr.sg.status.finished.join( ',' ) );
-			sg_beacon( 'data', 'userType', mw.wr.sg.status.userType );
-			sg_beacon( 'onoffered', mw.wr.sg.onSurveyOffered );
-			sg_beacon( 'onlit', mw.wr.sg.onInterceptLit );
+	},
 
-		},
+	onInterceptLit: function () {
+		if ( mw.centralNotice ) {
+			mw.centralNotice.setBannerLoadedButHidden( 'surveyloaded' );
+		}
+	},
 
-		onInterceptLit: function () {
-			if ( mw.centralNotice ) {
-				mw.centralNotice.setBannerLoadedButHidden( 'surveyloaded' );
+	onSurveyOffered: function() {
+		mw.wr.sg.trackAnalyticsEvent( 'offered' );
+
+		// .sg-b-l-t is the "Take Survey" button on the intercept dialog
+		$( '.sg-b-l-t' ).on( 'click', function () {
+			if ( mw.wr.sg.getSurveyID() ) {
+				mw.wr.sg.status.started.push( mw.wr.sg.surveyID );
+				mw.wr.sg.trackAnalyticsEvent( 'started' );
+				mw.wr.sg.updateCookie();
+				mw.wr.sg.turnIntoRealModal();
 			}
-		},
+		} );
+	},
 
-		onSurveyOffered: function() {
-			mw.wr.sg.trackAnalyticsEvent( 'survey-offered' );
-		},
+	getSurveyID: function () {
+		var $realLink,
+			matches;
 
-		getAllPreviousSurveys: function () {
-			return (
-				mw.wr.sg.status.rejected +
-				mw.wr.sg.status.started +
-				mw.wr.sg.status.finished
-			);
-		},
+		if ( mw.wr.sg.surveyID ) {
+			return mw.wr.sg.surveyID;
+		}
+		$realLink = $( '.sg-b-l-m' );
+		matches = $realLink.length > 0 ?
+			$realLink.attr( 'href' ).match( /\/s3\/(\d+)\// ) :
+			null;
 
-		getSurveyID: function () {
-			var $realLink,
-				matches;
-
-			if ( mw.wr.sg.surveyID ) {
-				return mw.wr.sg.surveyID;
-			}
-			$realLink = $( '.sg-b-l-m' );
-			matches = $realLink.length > 0 ?
-				$realLink.attr( 'href' ).match( /\/s3\/(\d+)\// ) :
-				null;
-
-			if ( matches && $.isArray( matches ) && matches[ 1 ] ) {
-				mw.wr.sg.surveyID = parseInt( matches[ 1 ] );
-				return mw.wr.sg.surveyID;
-			}
-
-			return null;
-		},
-
-		addMessageListener: function () {
-			$( window ).on( 'message', function ( event, data, origin ) {
-				if ( !data ) {
-					data = event.originalEvent ? event.originalEvent.data : event.data;
-				}
-				if ( !origin ) {
-					origin = event.originalEvent ? event.originalEvent.origin : event.origin;
-				}
-
-				if ( !mw.wr.sg.isValidOrigin( origin ) ) {
-					return; // La la la, I'm not listening to you!
-				}
-
-				data = JSON.parse( data );
-
-				if ( data.action === 'status' ) {
-					if ( data.status === 'submitted' && data.id ) {
-						mw.wr.sg.status.finished.push( data.id );
-						mw.wr.sg.trackAnalyticsEvent( 'survey-completed' );
-						mw.wr.sg.updateCookie();
-					}
-				}				else if ( data.action === 'userType' ) {
-					/*
-					// Can't do this in Universal Analytics
-					window._gaq = window._gaq || [];
-					window._gaq.push(['_setCustomVar',
-						2,					// 2nd slot
-						'User Type',		// custom variable name
-						data.status,		// custom variable filtered in GA
-						1					// custom variable scope - visitor-level
-					]);
-					*/
-					mw.log( 'User type: ' + data.status );
-					mw.wr.sg.status.userType = data.status;
-					mw.wr.sg.updateCookie();
-				}				else if ( data.action === 'closeDialog' ) {
-					mw.wr.sg.closeDialog();
-					// In case the survey was loaded in Extension:ShareBar's modal:
-					window.closeActiveModal();
-				}
-
-			} );
-
-		},
-
-		// @todo Find a way to send user type as a custom dimension in Universal Analytics
-		trackAnalyticsEvent: function ( surveyAction ) {
-			if ( mw.loader.getState( 'ext.googleUniversalAnalytics.utils' ) === null ) {
-				return;
-			}
-			mw.loader.using( 'ext.googleUniversalAnalytics.utils' ).then( function () {
-				mw.googleAnalytics.utils.recordEvent( {
-					eventCategory: 'SurveyGizmo-Survey',
-					eventAction: surveyAction,
-					eventLabel: mw.wr.sg.getSurveyID().toString(),
-					nonInteraction: true
-				} );
-			} );
-		},
-
-		isValidOrigin: function ( origin ) {
-			return origin.match( /https?:\/\/(www\.)?surveygizmo\.(com|eu|co\.uk)/ ) !== null;
-		},
-
-		updateCookie: function () {
-			mw.loader.using( 'mediawiki.cookie', function () {
-				mw.log( mw.wr.sg.status );
-				// @NOTICE jQuery.cookie treats expires as days, mw.cookie treats it as seconds!
-				mw.cookie.set(
-					mw.wr.sg.cookieName,
-					JSON.stringify( mw.wr.sg.status ),
-					{ expires: 31536000 }
-				);
-			} );
-
-		},
-
-		setLaunchHandler: function () {
-			var regex, result;
-
-			$( 'body' ).on( 'click', '.sg-b-l-t', function () {
-				if ( mw.wr.sg.getSurveyID() ) {
-					mw.wr.sg.status.started.push( mw.wr.sg.surveyID );
-					mw.wr.sg.trackAnalyticsEvent( 'survey-started' );
-					mw.wr.sg.updateCookie();
-					mw.wr.sg.turnIntoRealModal();
-				}
-			} );
-
-			// Manual start
-			if ( typeof ( mw.wrShareBar ) !== 'undefined' && mw.wrShareBar.settings.feedback.url ) {
-				regex = /\/s3\/(\d+)\//;
-				result = regex.exec( mw.wrShareBar.settings.feedback.url );
-				if ( result && result[ 1 ] ) {
-					$( '.kz-nav-feedback, .kz-footer-feedback' ).click( function () {
-						mw.wr.sg.surveyID = parseInt( result[ 1 ] );
-						mw.wr.sg.status.started.push( mw.wr.sg.surveyID );
-						mw.wr.sg.trackAnalyticsEvent( 'survey-started-manually' );
-						mw.wr.sg.updateCookie();
-					} );
-				}
-			}
-		},
-
-		setInterceptCloseHandler: function () {
-			$( 'body' ).on( 'click', '.sg-js-d', function () {
-				// On clicking the intercept "close" button
-				if ( mw.wr.sg.getSurveyID() ) {
-					mw.wr.sg.status.rejected.push( mw.wr.sg.surveyID );
-					mw.wr.sg.trackAnalyticsEvent( 'survey-rejected' );
-					mw.wr.sg.updateCookie();
-				} else {
-					mw.log.warn( 'No survey ID to log' );
-				}
-			} );
-		},
-
-		closeDialog: function () {
-			// Mime clicking on the close button...
-			$( '.sg-b-p-c' ).click();
-		},
-
-		/**
-		 * SurveyGizmo's survey window is closed on clicking the overlay,
-		 * which is no good. This is a hack to prevent that.
-		 * @TODO get this to actually work...
-		 */
-		turnIntoRealModal: function () {
-			$( '.sg-b-p-m' ).on( 'click', function ( e ) {
-				e.stopImmediatePropagation();
-			} );
-		},
-
-		init: function () {
-			// Cancel if a banner is already showing
-			if (
-				mw.centralNotice &&
-				typeof ( mw.centralNotice.isBannerShown ) === 'function' &&
-				mw.centralNotice.isBannerShown()
-			) {
-				return false;
-			}
-
-			mw.loader.using( 'mediawiki.cookie', function () {
-				var cookieVal = mw.cookie.get( mw.wr.sg.cookieName );
-				if ( cookieVal ) {
-					mw.wr.sg.status = JSON.parse( cookieVal );
-				} else {
-					mw.wr.sg.status = {
-						rejected: [],
-						started: [],
-						finished: [],
-						userType: null
-					};
-				}
-			} );
-
-			mw.wr.sg.addSurveyGizmoCode();
-
-			this.addMessageListener();
-			this.setLaunchHandler();
-			this.setInterceptCloseHandler();
-
+		if ( matches && $.isArray( matches ) && matches[ 1 ] ) {
+			mw.wr.sg.surveyID = parseInt( matches[ 1 ] );
+			return mw.wr.sg.surveyID;
 		}
 
-	};
+		return null;
+	},
 
-	mw.wr.sg.init();
+	addMessageListener: function () {
+		$( window ).on( 'message', function ( event, data, origin ) {
+			if ( !data ) {
+				data = event.originalEvent ? event.originalEvent.data : event.data;
+			}
+			if ( !origin ) {
+				origin = event.originalEvent ? event.originalEvent.origin : event.origin;
+			}
 
-}( jQuery, mediaWiki ) );
+			if ( !mw.wr.sg.isValidOrigin( origin ) ) {
+				return; // La la la, I'm not listening to you!
+			}
+
+			data = JSON.parse( data );
+
+			if ( data.action === 'status' ) {
+				if ( data.status === 'submitted' && data.id ) {
+					mw.wr.sg.status.finished.push( data.id );
+					mw.wr.sg.trackAnalyticsEvent( 'completed' );
+					mw.wr.sg.updateCookie();
+				}
+			} else if ( data.action === 'userType' ) {
+				mw.log( 'User type: ' + data.status );
+				mw.wr.sg.status.userType = data.status;
+				mw.wr.sg.updateCookie();
+			} else if ( data.action === 'closeDialog' ) {
+				mw.wr.sg.closeDialog();
+				// In case the survey was loaded in Extension:ShareBar's modal:
+				window.closeActiveModal();
+			}
+		} );
+
+	},
+
+	// @todo Find a way to send user type as a custom dimension in Universal Analytics
+	trackAnalyticsEvent: function ( surveyAction ) {
+		var surveyID = mw.wr.sg.getSurveyID();
+		mw.track( 'survey.' + surveyAction, {
+			action: surveyAction,
+			label: surveyID ? surveyID.toString() : null,
+			value: null
+		} );
+	},
+
+	isValidOrigin: function ( origin ) {
+		return origin.match( /https?:\/\/(www|survey)\.alchemer\.com/ ) !== null;
+	},
+
+	updateCookie: function () {
+		mw.loader.using( 'mediawiki.cookie', function () {
+			mw.log( mw.wr.sg.status );
+			// @NOTICE jQuery.cookie treats expires as days, mw.cookie treats it as seconds!
+			mw.cookie.set(
+				mw.wr.sg.cookieName,
+				JSON.stringify( mw.wr.sg.status ),
+				{ expires: 31536000 }
+			);
+		} );
+
+	},
+
+	setInterceptCloseHandler: function () {
+		$( 'body' ).on( 'click', '.sg-js-d', function () {
+			// On clicking the intercept "close" button
+			if ( mw.wr.sg.getSurveyID() ) {
+				mw.wr.sg.status.rejected.push( mw.wr.sg.surveyID );
+				mw.wr.sg.trackAnalyticsEvent( 'rejected' );
+				mw.wr.sg.updateCookie();
+			} else {
+				mw.log.warn( 'No survey ID to log' );
+			}
+		} );
+	},
+
+	closeDialog: function () {
+		// Mime clicking on the close button...
+		$( '.sg-b-p-c' ).click();
+	},
+
+	/**
+	 * SurveyGizmo's survey window is closed on clicking the overlay,
+	 * which is no good. This is a hack to prevent that.
+	 * @TODO get this to actually work...
+	 */
+	turnIntoRealModal: function () {
+		$( '.sg-b-p-m' ).on( 'click', function ( e ) {
+			e.stopImmediatePropagation();
+		} );
+	},
+
+	init: function () {
+		// Cancel if a banner is already showing
+		if (
+			mw.centralNotice &&
+			typeof ( mw.centralNotice.isBannerShown ) === 'function' &&
+			mw.centralNotice.isBannerShown()
+		) {
+			return false;
+		}
+
+		mw.loader.using( 'mediawiki.cookie', function () {
+			var cookieVal = mw.cookie.get( mw.wr.sg.cookieName );
+			if ( cookieVal ) {
+				mw.wr.sg.status = JSON.parse( cookieVal );
+			} else {
+				mw.wr.sg.status = {
+					rejected: [],
+					started: [],
+					finished: [],
+					userType: null
+				};
+			}
+		} );
+
+		mw.wr.sg.addSurveyGizmoCode();
+
+		this.addMessageListener();
+		this.setInterceptCloseHandler();
+
+	}
+
+};
+
+mw.wr.sg.init();
