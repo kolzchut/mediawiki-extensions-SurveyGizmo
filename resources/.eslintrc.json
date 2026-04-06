@@ -1,0 +1,3 @@
+{
+	"extends": [ "wikimedia/client", "wikimedia/mediawiki", "wikimedia/jquery" ]
+}

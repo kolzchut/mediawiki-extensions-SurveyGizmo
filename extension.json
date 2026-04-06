@@ -1,6 +1,6 @@
 {
 	"name": "SurveyGizmo Intercept Loader",
-	"version": "0.4.0",
+	"version": "0.4.1",
 	"author": [
 		"Dror S. [FFS] ([http://www.kolzchut.org.il Kol-Zchut])"
 	],
@@ -13,8 +13,8 @@
 			"i18n"
 		]
 	},
-	"AutoloadClasses": {
-		"SurveyGizmoHooks": "SurveyGizmoHooks.php"
+	"AutoloadNamespaces": {
+		"MediaWiki\\Extension\\SurveyGizmo\\": "includes/"
 	},
 	"ResourceModules": {
 		"ext.surveyGizmo": {
@@ -26,15 +26,26 @@
 		}
 	},
 	"ResourceFileModulePaths": {
-		"localBasePath": "modules",
-		"remoteExtPath": "WikiRights/SurveyGizmo/modules"
+		"localBasePath": "resources",
+		"remoteExtPath": "WikiRights/SurveyGizmo/resources"
+	},
+	"HookHandlers": {
+		"main": {
+			"class": "MediaWiki\\Extension\\SurveyGizmo\\Hooks",
+			"services": [
+				"MainConfig"
+			]
+		}
 	},
 	"Hooks": {
-		"BeforePageDisplay": "SurveyGizmoHooks::onBeforePageDisplay",
-		"ResourceLoaderGetConfigVars": "SurveyGizmoHooks::onResourceLoaderGetConfigVars"
+		"BeforePageDisplay": "main",
+		"ResourceLoaderGetConfigVars": "main"
 	},
 	"config": {
 		"SurveyGizmoBeaconID": {
+			"value": null
+		},
+		"SurveyGizmoBeaconUrl": {
 			"value": null
 		}
 	},

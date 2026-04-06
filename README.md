@@ -12,6 +12,14 @@ Set your Alchemer Beacon ID:
 $wgSurveyGizmoBeaconID = 'your-beacon-id';
 ```
 
+### $wgSurveyGizmoBeaconUrl
+
+Set the Alchemer Beacon script URL:
+
+```php
+$wgSurveyGizmoBeaconUrl = 'https://...';
+```
+
 ## Tracking Events
 
 This extension tracks survey interactions using MediaWiki's `mw.track()` system. The following events are emitted:
@@ -31,6 +39,13 @@ Each event includes:
 To send these events to Google Analytics, use the [GoogleTagManager extension](https://github.com/kolzchut/mediawiki-extensions-GoogleTagManager), which can listen to `mw.track()` events and forward them to the DataLayer.
 
 ## Release Log
+
+### 0.4.1
+- Modernized to use service injection and instance-based hook handlers
+- Migrated to `AutoloadNamespaces` and PHP namespace `MediaWiki\Extension\SurveyGizmo`
+- Renamed `modules/` to `resources/`
+- Declared missing `$wgSurveyGizmoBeaconUrl` config variable in `extension.json`
+- Updated dev dependencies
 
 ### 0.4.0
 - Migrated from Google Universal Analytics to MediaWiki's `mw.track()` system
