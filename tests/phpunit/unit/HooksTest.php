@@ -5,13 +5,13 @@ namespace MediaWiki\Extension\SurveyGizmo\Tests\Unit;
 use MediaWiki\Config\Config;
 use MediaWiki\Extension\SurveyGizmo\Hooks;
 use MediaWiki\Output\OutputPage;
-use PHPUnit\Framework\TestCase;
+use MediaWikiUnitTestCase;
 use Skin;
 
 /**
  * @covers \MediaWiki\Extension\SurveyGizmo\Hooks
  */
-class HooksTest extends TestCase {
+class HooksTest extends MediaWikiUnitTestCase {
 
 	// -----------------------------------------------------------------------
 	// Helpers
