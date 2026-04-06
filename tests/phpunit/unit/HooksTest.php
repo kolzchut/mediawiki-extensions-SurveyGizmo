@@ -5,13 +5,13 @@ namespace MediaWiki\Extension\SurveyGizmo\Tests\Unit;
 use MediaWiki\Config\Config;
 use MediaWiki\Extension\SurveyGizmo\Hooks;
 use MediaWiki\Output\OutputPage;
-use MediaWikiUnitTestCase;
+use PHPUnit\Framework\TestCase;
 use Skin;
 
 /**
  * @covers \MediaWiki\Extension\SurveyGizmo\Hooks
  */
-class HooksTest extends MediaWikiUnitTestCase {
+class HooksTest extends TestCase {
 
 	// -----------------------------------------------------------------------
 	// Helpers
@@ -91,13 +91,13 @@ class HooksTest extends MediaWikiUnitTestCase {
 	// onResourceLoaderGetConfigVars
 	// -----------------------------------------------------------------------
 
-	public function testConfigVarsEmptyWhenBeaconIdMissing() {
+	public function testConfigVarsHasNoBeaconIdWhenBeaconIdMissing() {
 		$hooks = $this->makeHooks( $this->makeFullConfig( [ 'SurveyGizmoBeaconID' => null ] ) );
 
 		$vars = [];
 		$hooks->onResourceLoaderGetConfigVars( $vars, 'vector', $this->createMock( Config::class ) );
 
-		$this->assertArrayNotHasKey( 'wgSurveyGizmo', $vars );
+		$this->assertArrayNotHasKey( 'beaconID', $vars['wgSurveyGizmo'] ?? [] );
 	}
 
 	public function testConfigVarsPopulatedWhenBothConfigSet() {

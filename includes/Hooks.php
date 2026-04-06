@@ -4,7 +4,7 @@ namespace MediaWiki\Extension\SurveyGizmo;
 
 use MediaWiki\Config\Config;
 use MediaWiki\Hook\BeforePageDisplayHook;
-use MediaWiki\Hook\ResourceLoaderGetConfigVarsHook;
+use MediaWiki\ResourceLoader\Hook\ResourceLoaderGetConfigVarsHook;
 use Skin;
 
 class Hooks implements BeforePageDisplayHook, ResourceLoaderGetConfigVarsHook {
