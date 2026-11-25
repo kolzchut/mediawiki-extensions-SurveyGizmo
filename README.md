@@ -38,7 +38,16 @@ Each event includes:
 
 To send these events to Google Analytics, use the [GoogleTagManager extension](https://github.com/kolzchut/mediawiki-extensions-GoogleTagManager), which can listen to `mw.track()` events and forward them to the DataLayer.
 
+## Tests
+
+`npm run test:unit` runs the message-handling tests in jsdom (Node 20 or
+later); `npm test` runs them and then the linters.
+
 ## Release Log
+
+### 0.4.2
+- Accept survey frame messages only from the exact Alchemer `https` origins
+- Validate survey frame messages and the stored `Surveys` cookie before using them
 
 ### 0.4.1
 - Modernized to use service injection and instance-based hook handlers

@@ -1,0 +1,15 @@
+{
+	"extends": [
+		"wikimedia/server"
+	],
+	"settings": {
+		"n": {
+			"version": ">=20.0.0"
+		}
+	},
+	"rules": {
+		"no-jquery/no-class-state": "off",
+		"no-jquery/no-global-selector": "off",
+		"security/detect-non-literal-fs-filename": "off"
+	}
+}

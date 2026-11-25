@@ -10,6 +10,12 @@ mw.wr.sg = {
 	visitorCookie: '_sg_b_v',
 	status: {},
 	surveyID: null,
+	// Exact scheme + host (+ port) origins the survey frame may post from
+	allowedOrigins: [
+		'https://www.alchemer.com',
+		'https://survey.alchemer.com'
+	],
+	maxUserTypeLength: 64,
 
 	isLandingPage: function () {
 		return document.referrer.indexOf( location.protocol + '//' + location.host ) !== 0;
@@ -78,37 +84,81 @@ mw.wr.sg = {
 	},
 
 	addMessageListener: function () {
-		$( window ).on( 'message', function ( event, data, origin ) {
-			if ( !data ) {
-				data = event.originalEvent ? event.originalEvent.data : event.data;
-			}
-			if ( !origin ) {
-				origin = event.originalEvent ? event.originalEvent.origin : event.origin;
-			}
+		$( window ).on( 'message', ( event ) => {
+			const nativeEvent = event.originalEvent || event;
+			mw.wr.sg.handleMessage( nativeEvent.data, nativeEvent.origin );
+		} );
+	},
 
-			if ( !mw.wr.sg.isValidOrigin( origin ) ) {
-				return; // La la la, I'm not listening to you!
-			}
+	/**
+	 * Act on a message posted by the survey frame.
+	 *
+	 * @param {*} rawData The message's data, expected to be a JSON string
+	 * @param {string} origin The origin the browser reports for the sender
+	 */
+	handleMessage: function ( rawData, origin ) {
+		let data;
 
-			data = JSON.parse( data );
+		if ( !mw.wr.sg.isValidOrigin( origin ) ) {
+			return; // La la la, I'm not listening to you!
+		}
+		if ( typeof rawData !== 'string' ) {
+			return;
+		}
+		try {
+			data = JSON.parse( rawData );
+		} catch ( e ) {
+			return;
+		}
+		if ( !data || typeof data !== 'object' ) {
+			return;
+		}
 
-			if ( data.action === 'status' ) {
-				if ( data.status === 'submitted' && data.id ) {
-					mw.wr.sg.status.finished.push( data.id );
-					mw.wr.sg.trackAnalyticsEvent( 'completed' );
-					mw.wr.sg.updateCookie();
-				}
-			} else if ( data.action === 'userType' ) {
-				mw.log( 'User type: ' + data.status );
-				mw.wr.sg.status.userType = data.status;
+		if ( data.action === 'status' ) {
+			const surveyID = mw.wr.sg.parseSurveyID( data.id );
+			if ( data.status === 'submitted' && surveyID !== null ) {
+				mw.wr.sg.status.finished.push( surveyID );
+				mw.wr.sg.trackAnalyticsEvent( 'completed' );
 				mw.wr.sg.updateCookie();
-			} else if ( data.action === 'closeDialog' ) {
-				mw.wr.sg.closeDialog();
-				// In case the survey was loaded in Extension:ShareBar's modal:
+			}
+		} else if ( data.action === 'userType' ) {
+			if ( !mw.wr.sg.isValidUserType( data.status ) ) {
+				return;
+			}
+			mw.log( 'User type: ' + data.status );
+			mw.wr.sg.status.userType = data.status;
+			mw.wr.sg.updateCookie();
+		} else if ( data.action === 'closeDialog' ) {
+			mw.wr.sg.closeDialog();
+			// In case the survey was loaded in Extension:ShareBar's modal:
+			if ( typeof window.closeActiveModal === 'function' ) {
 				window.closeActiveModal();
 			}
-		} );
+		}
+	},
 
+	/**
+	 * @param {*} id A survey ID as received in a message
+	 * @return {number|null} The ID as a positive integer, or null if it is not one
+	 */
+	parseSurveyID: function ( id ) {
+		if ( typeof id === 'string' && /^[0-9]{1,15}$/.test( id ) ) {
+			id = parseInt( id, 10 );
+		}
+		if ( Number.isSafeInteger( id ) && id > 0 ) {
+			return id;
+		}
+		return null;
+	},
+
+	/**
+	 * @param {*} userType A user type as received in a message
+	 * @return {boolean}
+	 */
+	isValidUserType: function ( userType ) {
+		return typeof userType === 'string' &&
+			userType.length > 0 &&
+			userType.length <= mw.wr.sg.maxUserTypeLength;
 	},
 
 	// @todo Find a way to send user type as a custom dimension in Universal Analytics
@@ -121,8 +171,12 @@ mw.wr.sg = {
 		} );
 	},
 
+	/**
+	 * @param {*} origin
+	 * @return {boolean} Whether origin is exactly one of the allowed origins
+	 */
 	isValidOrigin: function ( origin ) {
-		return origin.match( /https?:\/\/(www|survey)\.alchemer\.com/ ) !== null;
+		return typeof origin === 'string' && mw.wr.sg.allowedOrigins.includes( origin );
 	},
 
 	updateCookie: function () {
@@ -167,6 +221,45 @@ mw.wr.sg = {
 		} );
 	},
 
+	/**
+	 * Read the stored status, falling back to an empty one for any part
+	 * that is missing or malformed.
+	 *
+	 * @param {string|null} cookieVal
+	 * @return {Object}
+	 */
+	parseStatusCookie: function ( cookieVal ) {
+		let stored = null;
+		const status = {
+			rejected: [],
+			started: [],
+			finished: [],
+			userType: null
+		};
+
+		if ( cookieVal ) {
+			try {
+				stored = JSON.parse( cookieVal );
+			} catch ( e ) {
+				stored = null;
+			}
+		}
+		if ( !stored || typeof stored !== 'object' ) {
+			return status;
+		}
+		[ 'rejected', 'started', 'finished' ].forEach( ( key ) => {
+			if ( Array.isArray( stored[ key ] ) ) {
+				status[ key ] = stored[ key ]
+					.map( mw.wr.sg.parseSurveyID )
+					.filter( ( id ) => id !== null );
+			}
+		} );
+		if ( mw.wr.sg.isValidUserType( stored.userType ) ) {
+			status.userType = stored.userType;
+		}
+		return status;
+	},
+
 	init: function () {
 		// Cancel if a banner is already showing
 		if (
@@ -177,18 +270,8 @@ mw.wr.sg = {
 			return false;
 		}
 
-		mw.loader.using( 'mediawiki.cookie', function () {
-			var cookieVal = mw.cookie.get( mw.wr.sg.cookieName );
-			if ( cookieVal ) {
-				mw.wr.sg.status = JSON.parse( cookieVal );
-			} else {
-				mw.wr.sg.status = {
-					rejected: [],
-					started: [],
-					finished: [],
-					userType: null
-				};
-			}
+		mw.loader.using( 'mediawiki.cookie', () => {
+			mw.wr.sg.status = mw.wr.sg.parseStatusCookie( mw.cookie.get( mw.wr.sg.cookieName ) );
 		} );
 
 		mw.wr.sg.addSurveyGizmoCode();
