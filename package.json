@@ -1,7 +1,8 @@
 {
   "private": true,
   "scripts": {
-    "test": "grunt test"
+    "test": "npm run test:unit && grunt test",
+    "test:unit": "node --test \"tests/jsdom/*.test.js\""
   },
   "devDependencies": {
     "eslint-config-wikimedia": "0.32.3",
@@ -9,6 +10,8 @@
     "grunt-banana-checker": "0.13.0",
     "grunt-eslint": "24.3.0",
     "grunt-stylelint": "0.20.1",
+    "jquery": "3.7.1",
+    "jsdom": "26.1.0",
     "stylelint-config-wikimedia": "0.18.0"
   },
   "eslintIgnore": [
